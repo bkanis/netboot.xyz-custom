@@ -6,17 +6,21 @@
 :custom
 clear custom_choice
 menu Brian Custom
-item --gap This is the first sub menu
-item option_one ${space} RancherOS
+item option_rancher ${space} RancherOS
+item option_esx ${space} VMWare ESXi
 choose custom_choice || goto custom_exit
 echo ${cls}
 goto ${custom_choice}
 goto custom_exit
 
-:option_one
+:option_rancher
 kernel http://releases.rancher.com/os/latest/vmlinuz
 initrd http://releases.rancher.com/os/latest/initrd
 imgargs vmlinuz rancher.cloud_init.datasources=[url:http://192.168.1.2/~bkanis/Docker/Swarm_Scripts/cloud-config.yml]
+boot || goto custom_exit
+
+:option_esx
+chain http://192.168.1.2/tftp/esx/EFI/BOOT/BOOTX64.EFI
 boot || goto custom_exit
 
 :custom_exit
