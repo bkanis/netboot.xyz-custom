@@ -2,12 +2,18 @@
 ###
 ### netboot.xyz-custom menu
 ###
+set net0/netmask 255.255.255.0
+set net0/gateway 192.168.1.1
+
 
 :custom
+set dns 192.168.1.1
 clear custom_choice
 menu Brian Custom
 item option_rancher ${space} RancherOS
 item option_esx ${space} VMWare ESXi
+item option_windows_server ${space} Windows Server
+item option_windows_desktop ${space} Windows Desktop
 choose custom_choice || goto custom_exit
 echo ${cls}
 goto ${custom_choice}
@@ -23,6 +29,17 @@ set keep-san 1
 set initiator-iqn iqn.2011-04.local.us.ar.bv.olympus:v-ipxe-a.olympus.bv.ar.us.local
 sanboot --drive 0x80 iscsi:atlas.olympus.bv.ar.us.local::::iqn.1991-05.com.microsoft:atlas-v-ipxe-a-target ||
 sanboot --drive 0x81 --no-describe http://192.168.1.2/tftp/esx/esx.iso || goto custom_exit
+
+:option_windows_server
+set win_base_url http://192.168.1.2/tftp/windows/Server
+chain https://boot.netboot.xyz/windows.ipxe || goto error
+goto custom
+
+:option_windows_desktop
+set win_base_url http://192.168.1.2/tftp/windows/Desktop
+chain https://boot.netboot.xyz/windows.ipxe || goto error
+goto custom
+
 
 :custom_exit
 chain utils.ipxe
