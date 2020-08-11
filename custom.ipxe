@@ -5,42 +5,66 @@
 set net0/netmask 255.255.255.0
 set net0/gateway 192.168.1.1
 
-
-:custom
+:custom_menu
 set dns 192.168.1.1
 clear custom_choice
 menu Brian Custom
+item --gap Default:
+item local ${space} Boot from local hdd
+item --gap Installs:
 item option_rancher ${space} RancherOS
 item option_esx ${space} VMWare ESXi
 item option_windows_server ${space} Windows Server
 item option_windows_desktop ${space} Windows Desktop
+item --gap
+item option_defaultmenu ${space} Netboot.xyz Default Menu
 choose custom_choice || goto custom_exit
 echo ${cls}
 goto ${custom_choice}
 goto custom_exit
 
+:local
+echo Booting from local disks ...
+exit 0
+
 :option_rancher
 kernel http://releases.rancher.com/os/latest/vmlinuz rancher.autologin=tty1 rancher.cloud_init.datasources=[url:http://192.168.1.2/~bkanis/Docker/Swarm_Scripts/cloud-config.yml] initrd=initrd 
 initrd http://releases.rancher.com/os/latest/initrd
-boot || goto custom_exit
+boot || goto error
+goto custom_menu
 
 :option_esx
 set keep-san 1
 set initiator-iqn iqn.2011-04.local.us.ar.bv.olympus:v-ipxe-a.olympus.bv.ar.us.local
 sanboot --drive 0x80 iscsi:atlas.olympus.bv.ar.us.local::::iqn.1991-05.com.microsoft:atlas-v-ipxe-a-target ||
-sanboot --drive 0x81 --no-describe http://192.168.1.2/tftp/esx/esx.iso || goto custom_exit
+sanboot --drive 0x81 --no-describe http://192.168.1.2/tftp/esx/esx.iso || goto error
+goto custom_menu
+
+:option_proxmox
+kernel https://boot.netboot.xyz/memdisk iso raw
+initrd http://192.168.1.2/tftp/esx/esx.iso
+boot || goto error
+goto custom_menu
 
 :option_windows_server
 set win_base_url http://192.168.1.2/tftp/windows/Server
 chain https://boot.netboot.xyz/windows.ipxe || goto error
-goto custom
+goto custom_exit
 
 :option_windows_desktop
 set win_base_url http://192.168.1.2/tftp/windows/Desktop
 chain https://boot.netboot.xyz/windows.ipxe || goto error
-goto custom
+goto custom_exit
 
+:option_defaultmenu
+chain https://boot.netboot.xyz || goto error
+|| goto error
+
+:error
+echo Error occured, press any key to return to menu ...
+prompt
+goto main_menu
 
 :custom_exit
-chain utils.ipxe
+goto custom_menu
 exit
